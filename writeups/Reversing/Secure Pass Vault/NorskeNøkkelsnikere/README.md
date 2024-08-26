@@ -7,8 +7,6 @@ Just connect via netcat to get started!
 ncat --ssl securepassvault.sf24.no 1337
 ```
 
-#reverse #csharp #sikkerhetsfestivalen2024 #6_solves
-
 ## TLDR;
  C# reverse challenge, that includes a obscured **debug** option that uses bit operators to hide what you need to put in after registering a user. You find the option by brute forcing the expression to get the correct answer that returns true. You will get the entire vault object sent back, that includes the AES key and encrypted passwords of all registered users. There is a password named flag included in the object, and you decrypt it using AES CBC.
 
