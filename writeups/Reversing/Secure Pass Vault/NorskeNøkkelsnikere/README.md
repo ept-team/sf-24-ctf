@@ -13,7 +13,7 @@ ncat --ssl securepassvault.sf24.no 1337
 ## Introduction to the challenge
 The attachment to the challenge is a dll file. I always open this first in DnSpy for the low hanging fruit. DnSpy decompiles IL code to almost 1:1 of source code. It doesn't include the variable names inside functions unless it's a dll built for debugging.
 
-I get greeted with this in DnSpy after opening the Dll and I start looking through what the file contains.  
+I get greeted with this in DnSpy after opening the dll and I start looking through what the file contains.  
 
 ![VaultServer](VaultServerInDnSpy.png)
 
@@ -113,8 +113,8 @@ If we isolate the code that is ran when debug method returns true, we can better
 ```cs
 if (this.n(text))
 {
-  string text2 = JsonSerializer.Serialize<Vault>(this.vault, null);
-  stream.Write(Encoding.ASCII.GetBytes(text2), 0, text2.Length);
+    string text2 = JsonSerializer.Serialize<Vault>(this.vault, null);
+    stream.Write(Encoding.ASCII.GetBytes(text2), 0, text2.Length);
 }
 ```
 
