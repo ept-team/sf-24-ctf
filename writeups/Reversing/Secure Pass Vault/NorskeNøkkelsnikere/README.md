@@ -13,8 +13,9 @@ ncat --ssl securepassvault.sf24.no 1337
 ## Introduction to the challenge
 The attachment to the challenge is a dll file. I always open this first in DnSpy for the low hanging fruit. DnSpy decompiles IL code to almost 1:1 of source code. It doesn't include the variable names inside functions unless it's a dll built for debugging.
 
-I get greeted with this in DnSpy after opening the Dll and I start looking through what the file contains.
-![[VaultServerInDnSpy.png]]
+I get greeted with this in DnSpy after opening the Dll and I start looking through what the file contains.  
+
+![VaultServer](VaultServerInDnSpy.png)
 
 After scrolling through the code I find this method that looks out of place, and obfuscated.
 This might be used as a way to trigger debug option that can allow us extract the flag from the server.
@@ -53,59 +54,58 @@ After analyzing the method, I see that it's used when you first connect to the V
 
 ```csharp
 private void handle_connection(IAsyncResult result)
-		{
-			try
-			{
-				this.accept_connection();
-				
-				NetworkStream stream = this.server
-				.EndAcceptTcpClient(result).GetStream();
-				
-				// Banner
-				stream.Write(
-					Encoding.ASCII.GetBytes(VaultServer.Banner), 
-					0, VaultServer.Banner.Length
-					);
-					
-				// Welcome message
-				stream.Write(
-					Encoding.ASCII.GetBytes
-					(VaultServer.WelcomeMessage), 
-					0, 
-					VaultServer.WelcomeMessage.Length
-					);
-				
-				User user = this.handle_login(stream);
-				
-				if (user == null)
-				{
-					return;
-				}
-				
-				bool flag = true;
-				
-				while (flag)
-				{
-					stream.Write(Encoding.ASCII.GetBytes(VaultServer.menu), 
-					0, VaultServer.menu.Length);
-					byte[] array = new byte[1024];
-					int num = stream.Read(array, 0, array.Length);
-					byte[] array2 = new byte[num];
-					Array.Copy(array, array2, num);
-					string text = Encoding.ASCII.GetString(array2).Trim();
-					if (this.n(text))
-					{
-						string text2 = JsonSerializer.Serialize<Vault>
-						(this.vault, null);
-						
-						stream.Write(
-						Encoding.ASCII.GetBytes(text2), 0, 
-						text2.Length
-						);
-					}
-					else if (!(text == "1"))
-					{
-					...
+{
+  try
+  {
+  this.accept_connection();
+
+  NetworkStream stream = this.server
+  .EndAcceptTcpClient(result).GetStream();
+
+  // Banner
+  stream.Write(
+	Encoding.ASCII.GetBytes(VaultServer.Banner), 
+	0, VaultServer.Banner.Length
+	);
+	
+  // Welcome message
+  stream.Write(
+	Encoding.ASCII.GetBytes
+	(VaultServer.WelcomeMessage), 
+	0, 
+	VaultServer.WelcomeMessage.Length
+	);
+
+  User user = this.handle_login(stream);
+
+  if (user == null)
+  {
+    return;
+  }
+
+  bool flag = true;
+
+  while (flag)
+  {
+	stream.Write(Encoding.ASCII.GetBytes(VaultServer.menu), 
+	0, VaultServer.menu.Length);
+	byte[] array = new byte[1024];
+	int num = stream.Read(array, 0, array.Length);
+	byte[] array2 = new byte[num];
+	Array.Copy(array, array2, num);
+	string text = Encoding.ASCII.GetString(array2).Trim();
+	if (this.n(text))
+	{
+          string text2 = JsonSerializer.Serialize<Vault>
+          (this.vault, null);
+		
+          stream.Write(
+            Encoding.ASCII.GetBytes(text2), 0, 
+            text2.Length);
+	}
+	else if (!(text == "1"))
+	{
+        ...
 ```
 
 If we isolate the code that is ran when debug method returns true, we can better understand what happens.
@@ -113,8 +113,8 @@ If we isolate the code that is ran when debug method returns true, we can better
 ```cs
 if (this.n(text))
 {
-	string text2 = JsonSerializer.Serialize<Vault>(this.vault, null);
-	stream.Write(Encoding.ASCII.GetBytes(text2), 0, text2.Length);
+  string text2 = JsonSerializer.Serialize<Vault>(this.vault, null);
+  stream.Write(Encoding.ASCII.GetBytes(text2), 0, text2.Length);
 }
 ```
 
@@ -138,7 +138,7 @@ for i in range(1000):
 The console prints **99**, next step is connecting to the server to confirm this is the right number.
 After registering a user we can input 99 and get back the entire vault object in JSON!
 
-![[VaultObjectFromServer.png]]
+![Vault Object](VaultObjectFromServer.png)
 
 ## How to extract flag from the vault
 We have the vault object now, but how do we extract the flag?
@@ -168,9 +168,9 @@ Easiest to analyze is "handle_retrieve_password" since it gives insight what met
 ```cs
 string text2 = AesEncryption.Decrypt
 (
-	Convert.FromBase64String(user.Vault[num3 - 1].EncryptedPassword),
-	Convert.FromBase64String(user.AESKey), 
-	Convert.FromBase64String(user.AESKey)
+    Convert.FromBase64String(user.Vault[num3 - 1].EncryptedPassword),
+    Convert.FromBase64String(user.AESKey), 
+    Convert.FromBase64String(user.AESKey)
 );
 ```
 > It uses a method that is in the class AesEncryption, that needs 3 parameters to be called.
@@ -178,27 +178,27 @@ string text2 = AesEncryption.Decrypt
 
 So I put this into [CyberChef](https://gchq.github.io/CyberChef/) to decrypt with the values we got.
 
-![[cyber_chef_failed_attempt.png]]
+![Cyber Chef failed](cyber_chef_failed_attempt.png)
 
 But the output doesn't give us human readable output? I was a bit stuck here, and tried out multiple ways to decode the text, as I thought it could be something else than ASCII. But I had no luck, so back to reading the code.
 
 ```cs
-	public static string Decrypt(byte[] ciphertext, byte[] key, byte[] iv)
-		{
-			string @string;
-			using (Aes aes = Aes.Create())
-			{
-				byte[] array = new byte[iv.Length - 16];
-				Array.Copy(iv, 16, array, 0, iv.Length - 16);
-				aes.Key = key;
-				aes.IV = array;
-				ICryptoTransform cryptoTransform = aes.CreateDecryptor(aes.Key, aes.IV);
+public static string Decrypt(byte[] ciphertext, byte[] key, byte[] iv)
+{
+    string @string;
+    using (Aes aes = Aes.Create())
+    {
+        byte[] array = new byte[iv.Length - 16];
+        Array.Copy(iv, 16, array, 0, iv.Length - 16);
+        aes.Key = key;
+        aes.IV = array;
+        ICryptoTransform cryptoTransform = aes.CreateDecryptor(aes.Key, aes.IV);
 ```
 > The code uses the last 16 bytes from the key to be used as IV values
 
 So after we split the hex key used in CyberChef we get back a human readable password
 
-![[cyber_chef_decrypted.png]]
+![Cyber Chef decrypted](cyber_chef_decrypted.png)
 
 ### The flag
 The flag password was found when searching **flag** in the search box.
@@ -212,6 +212,6 @@ and was on user **9vsTn** with AESKey ``Q2WnINkhO3Yqsll1IMN6D+vc4ARuKNDaXkCCR7xm
 },
 ```
 
-And when decrypted we get the flag: `SF24{1n53cur3_b4ckup_funct10n4l1ty}`
+And when decrypted we get the flag: `SF24{1n53cur3_b4ckup_funct10n4l1ty}`  
 
-![[cyber_chef_flag_decrypted.png]]
+![Cyber Chef flag decrypted](cyber_chef_flag_decrypted.png)
