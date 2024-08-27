@@ -35,6 +35,8 @@
  - **Seasons**
  - **crazy**
  - **Check Pin**
+ - **Secure Pass Vault**
+	 - [NorskeNøkkelsnikere](/writeups/Reversing/Secure%20Pass%20Vault/NorskeNøkkelsnikere)  
  - **babyBPF**
 ### Web
  - **Webshop**
